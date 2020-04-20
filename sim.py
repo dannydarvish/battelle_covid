@@ -31,6 +31,7 @@ class Sim:
         self._total_sick = 0
         self._total_dead = 0
         self._total_recovered = 0
+        self._R = 0
         for person in people:
             if person.health == 'healthy':
                 self._total_healthy += 1
@@ -52,8 +53,8 @@ class Sim:
         self._files = [open('states/sim_person_%i.csv' % i, 'w') for i in range(len(people))]
         self._files.append(open('states/stats.csv', 'w'))
         for f in self._files[:-1]:
-            f.write('time,x,y,health\n')
-        self._files[-1].write('time,healthy,sick,recovered,dead\n')
+            f.write('time,x,y,health,num_infected\n')
+        self._files[-1].write('time,healthy,sick,recovered,dead,R\n')
 
     def proceed(self, n_steps = 1):
         for _ in range(n_steps):
@@ -67,7 +68,7 @@ class Sim:
             kill_list = []
             for i, person_i in enumerate(self._people):
                 for j, person_j in enumerate(self._people):
-                    if i == j:
+                    if i <= j:
                         continue
                     delta_r = person_i.pos - person_j.pos
                     # Double check that they are indeed moving toward each other
@@ -77,6 +78,7 @@ class Sim:
                         if person_i.health == 'sick' and person_j.health == 'healthy' and \
                             i not in kill_list and j not in kill_list:
                             if rand() < self._transmission_prob:
+                                person_i.num_infected += 1
                                 if rand() < self._death_rate:
                                     kill_list.append(j)
                                     self._total_healthy -= 1
@@ -88,6 +90,7 @@ class Sim:
                         if person_i.health == 'healthy' and person_j.health == 'sick' and \
                             i not in kill_list and j not in kill_list:
                             if rand() < self._transmission_prob:
+                                person_j.num_infected += 1
                                 if rand() < self._death_rate:
                                     kill_list.append(i)
                                     self._total_healthy -= 1
@@ -106,15 +109,20 @@ class Sim:
                     collision, nearest = self.detect_barrier_collision(person, barrier)
                     if collision:
                         self.collide_with_barrier(person, barrier, nearest)
+            # Update R
+            self._R = 0.0
+            for person in self._people:
+                self._R += person.num_infected
+            self._R /= len(self._people)
             self._time += self._delta_t
     def write_state_to_file(self, dir=None):
         # Write current stats to file
-        self._files[-1].write('%f,%d,%d,%d,%d\n' %
+        self._files[-1].write('%f,%d,%d,%d,%d,%d\n' %
                               (self._time, self._total_healthy, self._total_sick, 
-                               self._total_recovered, self._total_dead))
+                               self._total_recovered, self._total_dead, self._R))
         for ind, person in enumerate(self._people):
-            self._files[ind].write('%f,%f,%f,%s\n' %
-                                   (self._time, person.pos[0], person.pos[1], person.health))
+            self._files[ind].write('%f,%f,%f,%s,%d\n' %
+                                   (self._time, person.pos[0], person.pos[1], person.health, person.num_infected))
         
     def collide_people(self, person1, person2):
         # In this special case of equal masses, we just swap the velocities.

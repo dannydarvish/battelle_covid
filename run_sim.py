@@ -22,7 +22,7 @@ try:
     else:
         print_ = False
 except(IndexError):
-    sys.exit('Usage: python run_sym.py name transm_prob death_rate recovery_time')
+    sys.exit('Usage: python run_sym.py name transm_prob death_rate recovery_time quarantine_rate (optional)')
 
 people = []
 for i in range(14):

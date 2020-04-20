@@ -13,6 +13,7 @@ class Person:
         self.time_spent_sick = 0
         self.radius = radius
         self._quarantined = quarantined
+        self.num_infected = 0
         if quarantined:
             self._vel = np.array([0.0, 0.0])
 
