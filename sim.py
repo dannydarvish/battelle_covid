@@ -126,6 +126,9 @@ class Sim:
         
     def collide_people(self, person1, person2):
         # In this special case of equal masses, we just swap the velocities.
+        # For non-zero radius, this is strictly incorrect, but
+        # the approximation speeds things up by reducing the need for
+        # another projection.
         if person1.quarantined:
             person2.vel *= -1
         elif person2.quarantined:
